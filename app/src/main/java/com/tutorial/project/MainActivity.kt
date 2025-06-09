@@ -1,5 +1,7 @@
 package com.tutorial.project
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,18 +11,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.ViewModelProvider
-import com.tutorial.project.data.api.SupabaseClientProvider
-import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.navigation.MainNavHost
 import com.tutorial.project.ui.theme.ProjectTheme
-import com.tutorial.project.viewmodel.AuthViewModel
-import com.tutorial.project.viewmodel.factory.GenericViewModelFactory
-import io.github.jan.supabase.auth.auth
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    createNotificationChannel()
     enableEdgeToEdge()
     setContent {
       ProjectTheme {
@@ -33,5 +30,24 @@ class MainActivity : ComponentActivity() {
         }
       }
     }
+  }
+
+  private fun createNotificationChannel() {
+    // Create the NotificationChannel, but only on API 26+ because
+    // the NotificationChannel class is new and not in the support library
+    val name = "Cart Reminders"
+    val descriptionText = "Notifications about items in your cart"
+    val importance = NotificationManager.IMPORTANCE_DEFAULT
+    val channel = NotificationChannel(CART_CHANNEL_ID, name, importance).apply {
+      description = descriptionText
+    }
+    // Register the channel with the system
+    val notificationManager: NotificationManager =
+      getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+    notificationManager.createNotificationChannel(channel)
+  }
+
+  companion object {
+    const val CART_CHANNEL_ID = "cart_channel"
   }
 }

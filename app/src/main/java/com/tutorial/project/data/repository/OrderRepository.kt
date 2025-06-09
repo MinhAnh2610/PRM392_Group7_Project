@@ -1,59 +1,53 @@
+// app/src/main/java/com/tutorial/project/data/repository/OrderRepository.kt
 package com.tutorial.project.data.repository
 
 import com.tutorial.project.data.model.CartItemWithProductDetails
 import com.tutorial.project.data.model.Order
-import com.tutorial.project.data.model.OrderItem
 import io.github.jan.supabase.SupabaseClient
-import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.postgrest
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
-class OrderRepository (private val client: SupabaseClient, private val authRepository: AuthRepository) {
+class OrderRepository(
+  private val client: SupabaseClient,
+  private val authRepository: AuthRepository
+) {
 
-  // This operation should ideally be a transaction (e.g., in a Supabase Edge Function)
-  // to ensure atomicity. Doing it client-side means handling partial failures.
-  suspend fun createOrder(cartItems: List<CartItemWithProductDetails>, totalAmount: Double): Result<Order> {
-    val userId = authRepository.getCurrentUserId()
-      ?: return Result.failure(Exception("User not logged in"))
+  /**
+   * Calls a Supabase RPC function to create an order, which handles stock checking,
+   * order creation, order item creation, stock deduction, and cart clearing in a single transaction.
+   */
+  suspend fun createOrderAndProcessStock(cartItems: List<CartItemWithProductDetails>): Result<String> {
+    if (authRepository.getCurrentUserId() == null) {
+      return Result.failure(Exception("User not logged in"))
+    }
 
     return try {
-      // 1. Create the Order
-      val orderToInsert = Order(user_id = userId, total_amount = totalAmount, status = "pending")
-      // Use returning = "representation" to get the inserted order back with its ID
-      val createdOrderList = client.from("orders")
-        .insert(orderToInsert) // Ensure correct enum
-        .decodeList<Order>()
-
-      if (createdOrderList.isEmpty()) {
-        throw Exception("Failed to create order or get its representation back.")
-      }
-      val createdOrder = createdOrderList.first()
-
-
-      // 2. Create OrderItems
-      val orderItemsToInsert = cartItems.map { cartItem ->
-        OrderItem(
-          order_id = createdOrder.id!!, // Use the ID from the created order
-          product_id = cartItem.product_id,
-          quantity = cartItem.quantity,
-          price = cartItem.product_price // Price at the time of purchase
-        )
+      // Construct the JSONB payload required by the PostgreSQL function
+      val cartItemsJson = buildJsonArray {
+        cartItems.forEach { item ->
+          add(buildJsonObject {
+            put("product_id", item.product_id)
+            put("quantity", item.quantity)
+            put("price", item.product_price) // Price at the time of purchase
+          })
+        }
       }
 
-      if (orderItemsToInsert.isNotEmpty()) {
-        client.from("order_items").insert(orderItemsToInsert)
-        // Add error checking for order_items insert if needed
-      }
+      // Call the RPC function
+       client.postgrest.rpc(
+        "create_order_and_deduct_stock",
+        buildJsonObject {
+          put("p_cart_items", cartItemsJson)
+        }
+      )
 
-      // 3. Optionally, update product stock quantities (complex, better in backend/function)
-      // for (item in cartItems) {
-      //     client.postgrest.from("products")
-      //         .update(mapOf("stock_quantity" to item.productStockQuantity - item.quantity))
-      //         { filter("id", "eq", item.productId.toString()) }
-      //         .execute()
-      // }
+      // The function now also clears the cart, so we don't need to do it here.
+      Result.success("Successfully created an order")
 
-      Result.success(createdOrder)
     } catch (e: Exception) {
-      // Consider logic to handle partial success (e.g., order created but items failed)
+      // The exception message from the database (e.g., "Not enough stock...") will be propagated here.
       Result.failure(e)
     }
   }

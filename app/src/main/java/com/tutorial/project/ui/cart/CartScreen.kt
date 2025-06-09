@@ -52,6 +52,7 @@ import com.tutorial.project.data.api.SupabaseClientProvider
 import com.tutorial.project.data.model.CartItemWithProductDetails
 import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.data.repository.CartRepository
+import com.tutorial.project.navigation.Screen
 import com.tutorial.project.viewmodel.CartViewModel
 import com.tutorial.project.viewmodel.factory.GenericViewModelFactory
 import io.github.jan.supabase.auth.auth
@@ -97,9 +98,7 @@ fun CartScreen(navController: NavController) {
     bottomBar = {
       if (cartItems.isNotEmpty()) {
         CartSummary(totalPrice = totalPrice, onCheckout = {
-          // TODO: Navigate to Billing Screen
-          Toast.makeText(context, "Checkout functionality not implemented yet.", Toast.LENGTH_SHORT)
-            .show()
+          navController.navigate(Screen.Billing.route)
         })
       }
     }

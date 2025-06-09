@@ -1,6 +1,11 @@
 package com.tutorial.project.ui.dashboard
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -36,16 +41,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.tutorial.project.data.api.SupabaseClientProvider
+import com.tutorial.project.data.dto.NotificationHelper
 import com.tutorial.project.data.model.Product
 import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
 import com.tutorial.project.navigation.Screen
-import com.tutorial.project.ui.product.ProductDetailScreen
 import com.tutorial.project.viewmodel.DashboardViewModel
 import com.tutorial.project.viewmodel.factory.GenericViewModelFactory
 import io.github.jan.supabase.auth.auth
@@ -72,6 +78,46 @@ fun DashboardScreen(
   val error by viewModel.error.observeAsState()
   val context = LocalContext.current
   val toastEvent by viewModel.toastEvent.observeAsState()
+  val notificationRequest by viewModel.notificationRequest.observeAsState()
+
+  // Permission Launcher
+  val launcher = rememberLauncherForActivityResult(
+    ActivityResultContracts.RequestPermission()
+  ) { isGranted: Boolean ->
+    if (isGranted) {
+      viewModel.checkForNotification()
+    } else {
+      // Handle permission denial if needed
+      Toast.makeText(context, "Notification permission denied.", Toast.LENGTH_SHORT).show()
+    }
+  }
+
+  // Trigger notification check on launch
+  LaunchedEffect(Unit) {
+    viewModel.loadCartItems() // For the badge
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      when (PackageManager.PERMISSION_GRANTED) {
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) -> {
+          viewModel.checkForNotification()
+        }
+
+        else -> {
+          launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+      }
+    } else {
+      // For older versions, permission is granted by default
+      viewModel.checkForNotification()
+    }
+  }
+
+  // Observe the event from the ViewModel
+  LaunchedEffect(notificationRequest) {
+    notificationRequest?.let { itemCount ->
+      NotificationHelper.showCartNotification(context, itemCount)
+      viewModel.onNotificationShown() // Consume the event
+    }
+  }
 
   LaunchedEffect(toastEvent) {
     toastEvent?.let { event ->
@@ -125,7 +171,6 @@ fun DashboardScreen(
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProductCard(product: Product, onProductClick: () -> Unit, onAddToCart: () -> Unit) {
   Card(

@@ -28,12 +28,15 @@ class DashboardViewModel(
   private val _toastEvent = MutableLiveData<ToastEvent?>()
   val toastEvent: LiveData<ToastEvent?> = _toastEvent
 
+  private val _notificationRequest = MutableLiveData<Int?>()
+  val notificationRequest: LiveData<Int?> = _notificationRequest
+
   init {
     loadProducts()
     loadCartItems()
   }
 
-  private fun loadCartItems() {
+  fun loadCartItems() {
     viewModelScope.launch {
       val result = cartRepository.fetchCartItems()
       Log.e("SUPABASE.cartItems", result.toString())
@@ -75,6 +78,21 @@ class DashboardViewModel(
         }
       )
     }
+  }
+
+  fun checkForNotification() {
+    viewModelScope.launch {
+      cartRepository.getCartItemCount().onSuccess { count ->
+        if (count > 0) {
+          _notificationRequest.value = count.toInt()
+        }
+      }
+    }
+  }
+
+  // New function to consume the event after notification is shown
+  fun onNotificationShown() {
+    _notificationRequest.value = null
   }
 
   /**

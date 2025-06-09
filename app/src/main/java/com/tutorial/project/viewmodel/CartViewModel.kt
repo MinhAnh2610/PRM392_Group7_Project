@@ -61,18 +61,4 @@ class CartViewModel(private val cartRepository: CartRepository) : ViewModel() {
       )
     }
   }
-
-  fun clearCart() {
-    viewModelScope.launch {
-      _isLoading.value = true
-      cartRepository.clearCart().fold(
-        onSuccess = {
-          _cartItems.value = emptyList()
-          _totalPrice.value = 0.0
-        },
-        onFailure = { _error.value = it.message }
-      )
-      _isLoading.value = false
-    }
-  }
 }
