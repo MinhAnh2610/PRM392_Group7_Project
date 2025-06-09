@@ -11,10 +11,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -51,18 +57,20 @@ fun DashboardScreen(
 ) {
   val viewModel: DashboardViewModel = viewModel(
     factory = GenericViewModelFactory {
-      DashboardViewModel(productRepository = ProductRepository(SupabaseClientProvider.client),
+      DashboardViewModel(
+        productRepository = ProductRepository(SupabaseClientProvider.client),
         cartRepository = CartRepository(
           client = SupabaseClientProvider.client,
           authRepository = AuthRepository(SupabaseClientProvider.client.auth)
-        ),)
+        ),
+      )
     }
   )
 
   val productList by viewModel.products.observeAsState(emptyList())
+  val cartItemList by viewModel.cartItems.observeAsState(emptyList())
   val error by viewModel.error.observeAsState()
   val context = LocalContext.current
-
   val toastEvent by viewModel.toastEvent.observeAsState()
 
   LaunchedEffect(toastEvent) {
@@ -74,7 +82,25 @@ fun DashboardScreen(
 
   Scaffold(
     topBar = {
-      TopAppBar(title = { Text("Product Sale") })
+      TopAppBar(
+        title = { Text("Product Sale") },
+        actions = {
+          IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
+            BadgedBox(
+              badge = {
+                if (cartItemList.isNotEmpty()) {
+                  Badge { Text(cartItemList.size.toString()) }
+                }
+              }
+            ) {
+              Icon(
+                Icons.Default.ShoppingCart,
+                contentDescription = "Shopping Cart"
+              )
+            }
+          }
+        }
+      )
     }
   ) { padding ->
     Column(modifier = Modifier.padding(padding)) {

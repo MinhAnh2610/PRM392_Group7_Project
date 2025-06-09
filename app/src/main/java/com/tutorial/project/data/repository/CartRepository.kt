@@ -3,6 +3,7 @@ package com.tutorial.project.data.repository
 
 import com.tutorial.project.data.model.CartItem
 import com.tutorial.project.data.model.CartItemWithProductDetails
+import com.tutorial.project.data.model.Product
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Count
@@ -35,6 +36,17 @@ class CartRepository(
     } catch (e: Exception) {
       Result.failure(e)
     }
+  }
+
+  suspend fun fetchCartItems(): Result<List<CartItem>> = try {
+    val result = client
+      .from("cart_items")
+      .select()
+      .decodeList<CartItem>()
+
+    Result.success(result)
+  } catch (e: Exception) {
+    Result.failure(e)
   }
 
   suspend fun addOrUpdateCartItem(productId: Int, quantityToAdd: Int): Result<Unit> {

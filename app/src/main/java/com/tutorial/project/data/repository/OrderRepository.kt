@@ -32,9 +32,9 @@ class OrderRepository (private val client: SupabaseClient, private val authRepos
       val orderItemsToInsert = cartItems.map { cartItem ->
         OrderItem(
           order_id = createdOrder.id!!, // Use the ID from the created order
-          product_id = cartItem.productId,
+          product_id = cartItem.product_id,
           quantity = cartItem.quantity,
-          price = cartItem.productPrice // Price at the time of purchase
+          price = cartItem.product_price // Price at the time of purchase
         )
       }
 

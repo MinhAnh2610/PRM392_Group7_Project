@@ -6,6 +6,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutorial.project.data.dto.ToastEvent
+import com.tutorial.project.data.model.CartItem
 import com.tutorial.project.data.model.Product
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
@@ -18,6 +19,9 @@ class DashboardViewModel(
   private val _products = MutableLiveData<List<Product>>()
   val products: LiveData<List<Product>> = _products
 
+  private val _cartItems = MutableLiveData<List<CartItem>>()
+  val cartItems: LiveData<List<CartItem>> = _cartItems
+
   private val _error = MutableLiveData<String?>()
   val error: LiveData<String?> = _error
 
@@ -26,6 +30,19 @@ class DashboardViewModel(
 
   init {
     loadProducts()
+    loadCartItems()
+  }
+
+  private fun loadCartItems() {
+    viewModelScope.launch {
+      val result = cartRepository.fetchCartItems()
+      Log.e("SUPABASE.cartItems", result.toString())
+      result.onSuccess {
+        _cartItems.value = it
+      }.onFailure {
+        _error.value = it.message
+      }
+    }
   }
 
   private fun loadProducts() {

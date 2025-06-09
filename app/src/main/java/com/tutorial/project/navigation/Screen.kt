@@ -8,4 +8,5 @@ sealed class Screen(val route: String) {
     // This helper function builds the full route with the specific product ID
     fun createRoute(productId: Int) = "product_detail_$productId"
   }
+  data object Cart : Screen("cart")
 }

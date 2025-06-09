@@ -1,5 +1,6 @@
 package com.tutorial.project.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -26,7 +27,7 @@ class CartViewModel(private val cartRepository: CartRepository) : ViewModel() {
     viewModelScope.launch {
       _isLoading.value = true
       _error.value = null
-      cartRepository.getCartItemsWithDetails().fold(
+      val result = cartRepository.getCartItemsWithDetails().fold(
         onSuccess = { items ->
           _cartItems.value = items
           calculateTotal(items)
@@ -34,11 +35,12 @@ class CartViewModel(private val cartRepository: CartRepository) : ViewModel() {
         onFailure = { _error.value = it.message }
       )
       _isLoading.value = false
+      Log.e("SUPABASE.cartItems", result.toString())
     }
   }
 
   private fun calculateTotal(items: List<CartItemWithProductDetails>) {
-    _totalPrice.value = items.sumOf { it.productPrice * it.quantity }
+    _totalPrice.value = items.sumOf { it.product_price * it.quantity }
   }
 
   fun updateQuantity(cartItemId: Int, newQuantity: Int) {

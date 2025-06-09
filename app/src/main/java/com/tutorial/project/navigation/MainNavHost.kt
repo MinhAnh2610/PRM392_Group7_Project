@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.tutorial.project.ui.auth.LoginScreen
 import com.tutorial.project.ui.auth.SignUpScreen
+import com.tutorial.project.ui.cart.CartScreen
 import com.tutorial.project.ui.dashboard.DashboardScreen
 import com.tutorial.project.ui.product.ProductDetailScreen
 import com.tutorial.project.viewmodel.AuthViewModel
@@ -45,6 +46,11 @@ fun MainNavHost() {
       val productId = backStackEntry.arguments?.getInt("productId")
       requireNotNull(productId) { "Product ID is required" }
       ProductDetailScreen(navController = navController, productId = productId)
+    }
+    composable(Screen.Cart.route) {
+      CartScreen(
+        navController
+      )
     }
   }
 }
