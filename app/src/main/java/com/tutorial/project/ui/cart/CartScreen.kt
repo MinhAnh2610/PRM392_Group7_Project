@@ -18,8 +18,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -189,7 +188,7 @@ fun CartItemCard(
 fun QuantitySelector(quantity: Int, onQuantityChange: (Int) -> Unit) {
   Row(verticalAlignment = Alignment.CenterVertically) {
     IconButton(onClick = { onQuantityChange(quantity - 1) }, modifier = Modifier.size(32.dp)) {
-      Icon(Icons.Default.ArrowBack, contentDescription = "Decrease Quantity")
+      Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Decrease Quantity")
     }
     Text(
       text = quantity.toString(),
@@ -197,7 +196,7 @@ fun QuantitySelector(quantity: Int, onQuantityChange: (Int) -> Unit) {
       fontWeight = FontWeight.Bold
     )
     IconButton(onClick = { onQuantityChange(quantity + 1) }, modifier = Modifier.size(32.dp)) {
-      Icon(Icons.Default.ArrowForward, contentDescription = "Increase Quantity")
+      Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Increase Quantity")
     }
   }
 }

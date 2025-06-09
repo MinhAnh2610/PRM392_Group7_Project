@@ -3,7 +3,6 @@ package com.tutorial.project.data.repository
 
 import com.tutorial.project.data.model.CartItem
 import com.tutorial.project.data.model.CartItemWithProductDetails
-import com.tutorial.project.data.model.Product
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Count
@@ -114,19 +113,6 @@ class CartRepository(
           filter { eq("id", cartItemId) }
           filter { eq("user_id", userId) } // Ensure user can only update their own items
         }
-      Result.success(Unit)
-    } catch (e: Exception) {
-      Result.failure(e)
-    }
-  }
-
-
-  suspend fun clearCart(): Result<Unit> {
-    val userId = authRepository.getCurrentUserId()
-      ?: return Result.failure(Exception("User not logged in"))
-    return try {
-      client.from("cart_items")
-        .delete { filter { eq("user_id", userId) } }
       Result.success(Unit)
     } catch (e: Exception) {
       Result.failure(e)

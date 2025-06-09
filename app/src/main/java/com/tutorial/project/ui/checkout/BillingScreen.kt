@@ -45,12 +45,7 @@ fun BillingScreen(navController: NavController) {
   val totalPrice by viewModel.totalPrice.observeAsState(0.0)
 
   val context = LocalContext.current
-  var showSuccessDialog by remember { mutableStateOf<Boolean>(false) }
-
-  // Mock fields for user info
-  var name by remember { mutableStateOf("") }
-  var address by remember { mutableStateOf("") }
-  var phone by remember { mutableStateOf("") }
+  var showSuccessDialog by remember { mutableStateOf(false) }
 
   LaunchedEffect(orderState) {
     when (val state = orderState) {
@@ -133,7 +128,7 @@ fun BillingScreen(navController: NavController) {
             Text("$${"%.2f".format(item.product_price * item.quantity)}")
           }
         }
-        Divider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween

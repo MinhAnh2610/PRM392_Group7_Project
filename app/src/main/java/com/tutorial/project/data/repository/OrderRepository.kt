@@ -2,7 +2,6 @@
 package com.tutorial.project.data.repository
 
 import com.tutorial.project.data.model.CartItemWithProductDetails
-import com.tutorial.project.data.model.Order
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.json.buildJsonArray
