@@ -1,10 +1,11 @@
 package com.tutorial.project.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class CartItem(
-  val id: Int,
+  val id: Int? = null,
   val user_id: String,
-  val user: Profile,
   val product_id: Int,
-  val product: Product,
   val quantity: Int,
 )

@@ -1,12 +1,12 @@
 package com.tutorial.project.data.model
 
-import java.util.Date
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Order(
-  val id: Int,
-  val user_id: String,
-  val user: Profile,
+  val id: Int? = null,
+  val user_id: String?,
   val total_amount: Double,
-  val status: String,
-  val created_at: Date
+  val status: String = "pending",
+  val created_at: String? = null
 )

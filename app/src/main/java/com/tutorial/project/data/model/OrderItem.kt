@@ -1,11 +1,12 @@
 package com.tutorial.project.data.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class OrderItem(
-  val id: Int,
+  val id: Int? = null,
   val order_id: Int,
-  val order: Order,
   val product_id: Int,
-  val product: Product,
   val quantity: Int,
   val price: Double
 )

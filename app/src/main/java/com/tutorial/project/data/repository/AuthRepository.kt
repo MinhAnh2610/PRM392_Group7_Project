@@ -35,4 +35,8 @@ class AuthRepository(private val auth: Auth) {
   suspend fun logout() {
     auth.signOut()
   }
+
+  fun getCurrentUserId(): String? {
+    return auth.currentUserOrNull()?.id
+  }
 }

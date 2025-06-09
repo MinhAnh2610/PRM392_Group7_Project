@@ -1,11 +1,12 @@
 package com.tutorial.project.data.model
 
-import java.util.Date
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class Message(
-  val id: Int,
+  val id: Int? = null,
   val sender_id: String,
-  val receiver_id: String,
+  val receiver_id: String, // Could be a fixed store ID or dynamic
   val content: String,
-  val sent_at: Date
+  val sent_at: String? // Consider Instant
 )

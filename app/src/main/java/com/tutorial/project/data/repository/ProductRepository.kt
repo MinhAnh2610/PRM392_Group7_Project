@@ -16,4 +16,14 @@ class ProductRepository(private val client: SupabaseClient) {
   } catch (e: Exception) {
     Result.failure(e)
   }
+
+  suspend fun getProductById(productId: Int): Result<Product?> = try {
+    val product = client
+      .from("products")
+      .select { filter { eq("id", productId) } } // Make sure value is String
+      .decodeSingleOrNull<Product>() // Or decodeList and take firstOrNull
+    Result.success(product)
+  } catch (e: Exception) {
+    Result.failure(e)
+  }
 }
