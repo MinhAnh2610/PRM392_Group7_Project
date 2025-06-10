@@ -22,7 +22,7 @@ class ProfileViewModel(private val profileRepository: ProfileRepository) : ViewM
     viewModelScope.launch {
       _isLoading.value = true
       _error.value = null
-      profileRepository.getMyProfile().fold(
+      profileRepository.getCurrentUserProfile().fold(
         onSuccess = { _profile.value = it },
         onFailure = { _error.value = it.message }
       )

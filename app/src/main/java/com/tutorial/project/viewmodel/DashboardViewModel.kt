@@ -16,6 +16,7 @@ class DashboardViewModel(
   private val productRepository: ProductRepository,
   private val cartRepository: CartRepository
 ) : ViewModel() {
+  // --- LiveData for UI State ---
   private val _products = MutableLiveData<List<Product>>()
   val products: LiveData<List<Product>> = _products
 
@@ -25,21 +26,44 @@ class DashboardViewModel(
   private val _error = MutableLiveData<String?>()
   val error: LiveData<String?> = _error
 
+  // Kept from 'Login-out-signup' for loading indicators
+  private val _isLoading = MutableLiveData<Boolean>()
+  val isLoading: LiveData<Boolean> = _isLoading
+
+  // Kept from 'main' for user feedback
   private val _toastEvent = MutableLiveData<ToastEvent?>()
   val toastEvent: LiveData<ToastEvent?> = _toastEvent
 
+  // Kept from 'main' for triggering local notifications
   private val _notificationRequest = MutableLiveData<Int?>()
   val notificationRequest: LiveData<Int?> = _notificationRequest
 
+  // --- Data Loading ---
   init {
     loadProducts()
     loadCartItems()
   }
 
+  fun loadProducts() {
+    viewModelScope.launch {
+      _isLoading.value = true
+      // Correctly uses 'productRepository' and manages loading state
+      val result = productRepository.fetchProducts()
+      Log.d("DashboardViewModel", "Products Result: $result")
+      result.onSuccess {
+        _products.value = it
+        _error.value = null
+      }.onFailure {
+        _error.value = it.message
+      }
+      _isLoading.value = false
+    }
+  }
+
   fun loadCartItems() {
     viewModelScope.launch {
       val result = cartRepository.fetchCartItems()
-      Log.e("SUPABASE.cartItems", result.toString())
+      Log.d("DashboardViewModel", "Cart Items Result: $result")
       result.onSuccess {
         _cartItems.value = it
       }.onFailure {
@@ -48,30 +72,20 @@ class DashboardViewModel(
     }
   }
 
-  private fun loadProducts() {
-    viewModelScope.launch {
-      val result = productRepository.fetchProducts()
-      Log.e("SUPABASE.products", result.toString())
-      result.onSuccess {
-        _products.value = it
-      }.onFailure {
-        _error.value = it.message
-      }
-    }
-  }
-
+  // --- UI Actions ---
   fun addToCart(product: Product, quantity: Int) {
-    if (quantity > product.stock_quantity) {
+    // Use camelCase 'stockQuantity' from the merged Product model
+    if (quantity > (product.stock_quantity ?: 0)) {
       _toastEvent.value = ToastEvent("Not enough stock available.")
       return
     }
 
     viewModelScope.launch {
-      // For simplicity, we assume the user adds the full quantity.
-      // A real app might check existing quantity in cart and add to it.
-      cartRepository.addOrUpdateCartItem(product.id, quantity).fold(
+      cartRepository.addOrUpdateCartItem(product.id!!, quantity).fold(
         onSuccess = {
           _toastEvent.value = ToastEvent("Added to cart successfully!")
+          // Refresh cart items to update the badge
+          loadCartItems()
         },
         onFailure = {
           _toastEvent.value = ToastEvent("Error adding to cart: ${it.message}")
@@ -90,16 +104,19 @@ class DashboardViewModel(
     }
   }
 
-  // New function to consume the event after notification is shown
-  fun onNotificationShown() {
-    _notificationRequest.value = null
-  }
-
+  // --- Event Consumption ---
   /**
    * Call this function after the toast has been shown to prevent it from
-   * re-appearing on configuration changes (e.g., screen rotation).
+   * re-appearing on configuration changes.
    */
   fun onToastShown() {
     _toastEvent.value = null
+  }
+
+  /**
+   * Call this after the notification is shown to consume the event.
+   */
+  fun onNotificationShown() {
+    _notificationRequest.value = null
   }
 }

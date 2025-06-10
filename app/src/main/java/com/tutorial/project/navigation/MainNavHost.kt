@@ -6,21 +6,33 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.tutorial.project.data.api.SupabaseClientProvider
+import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.ui.auth.LoginScreen
 import com.tutorial.project.ui.auth.SignUpScreen
 import com.tutorial.project.ui.cart.CartScreen
 import com.tutorial.project.ui.checkout.BillingScreen
 import com.tutorial.project.ui.dashboard.DashboardScreen
 import com.tutorial.project.ui.product.ProductDetailScreen
+import io.github.jan.supabase.auth.auth
 
 @Composable
 fun MainNavHost() {
   val navController = rememberNavController()
 
-  NavHost(navController = navController, startDestination = Screen.Login.route) {
+  // Dynamic start destination logic from 'Login-out-signup'
+  val authRepository = AuthRepository(SupabaseClientProvider.client.auth)
+  val startDestination = if (authRepository.isLoggedIn()) {
+    Screen.Dashboard.route
+  } else {
+    Screen.Login.route
+  }
+
+  NavHost(navController = navController, startDestination = startDestination) {
+    // --- Authentication Screens from 'Login-out-signup' ---
     composable(Screen.Login.route) {
       LoginScreen(
-        navController,
+        navController = navController,
         onNavigateToSignUp = {
           navController.navigate(Screen.SignUp.route)
         }
@@ -28,15 +40,21 @@ fun MainNavHost() {
     }
     composable(Screen.SignUp.route) {
       SignUpScreen(
-        navController,
+        navController = navController,
         onNavigateToLogin = {
-          navController.navigate(Screen.Login.route)
+          navController.navigate(Screen.Login.route) {
+            // Pop SignUp from the back stack to prevent going back to it
+            popUpTo(Screen.SignUp.route) { inclusive = true }
+          }
         }
       )
     }
+
+    // --- Feature Screens from 'main' ---
     composable(Screen.Dashboard.route) {
-      DashboardScreen(navController)
+      DashboardScreen(navController = navController)
     }
+
     composable(
       route = Screen.ProductDetail.route,
       arguments = listOf(navArgument("productId") { type = NavType.IntType })
@@ -45,11 +63,13 @@ fun MainNavHost() {
       requireNotNull(productId) { "Product ID is required" }
       ProductDetailScreen(navController, productId)
     }
+
     composable(Screen.Cart.route) {
-      CartScreen(navController)
+      CartScreen(navController = navController)
     }
+
     composable(Screen.Billing.route) {
-      BillingScreen(navController)
+      BillingScreen(navController = navController)
     }
   }
 }
