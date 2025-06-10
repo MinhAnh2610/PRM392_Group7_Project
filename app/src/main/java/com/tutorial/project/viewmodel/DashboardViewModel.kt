@@ -16,19 +16,25 @@ class DashboardViewModel(private val repository: ProductRepository) : ViewModel(
   private val _error = MutableLiveData<String?>()
   val error: LiveData<String?> = _error
 
+  private val _isLoading = MutableLiveData<Boolean>()
+  val isLoading: LiveData<Boolean> = _isLoading
+
   init {
     loadProducts()
   }
 
-  private fun loadProducts() {
+  fun loadProducts() {
     viewModelScope.launch {
+      _isLoading.value = true
       val result = repository.fetchProducts()
       Log.e("SUPABASE.products", result.toString())
       result.onSuccess {
         _products.value = it
+        _error.value = null
       }.onFailure {
         _error.value = it.message
       }
+      _isLoading.value = false
     }
   }
 }
