@@ -13,8 +13,11 @@ import com.tutorial.project.ui.auth.SignUpScreen
 import com.tutorial.project.ui.cart.CartScreen
 import com.tutorial.project.ui.checkout.BillingScreen
 import com.tutorial.project.ui.dashboard.DashboardScreen
+import com.tutorial.project.ui.map.MapScreen
 import com.tutorial.project.ui.product.ProductDetailScreen
 import io.github.jan.supabase.auth.auth
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 @Composable
 fun MainNavHost() {
@@ -70,6 +73,47 @@ fun MainNavHost() {
 
     composable(Screen.Billing.route) {
       BillingScreen(navController = navController)
+    }
+
+    composable(
+      route = Screen.Chat.route,
+      arguments = listOf(
+        navArgument("storeOwnerId") { type = NavType.StringType },
+        navArgument("storeName") { type = NavType.StringType }
+      )
+    ) { backStackEntry ->
+      val storeOwnerId = backStackEntry.arguments?.getString("storeOwnerId")
+      val encodedStoreName = backStackEntry.arguments?.getString("storeName")
+      requireNotNull(storeOwnerId) { "Store Owner ID is required" }
+      requireNotNull(encodedStoreName) { "Store Name is required" }
+      val storeName = URLDecoder.decode(encodedStoreName, StandardCharsets.UTF_8.toString())
+
+//      ChatScreen(
+//        navController = navController,
+//        storeOwnerId = storeOwnerId,
+//        storeName = storeName
+//      )
+
+
+    }
+
+    composable(
+      route = Screen.Map.route,
+      arguments = listOf(
+        navArgument("latitude") { type = NavType.FloatType }, // Pass lat/lon as float
+        navArgument("longitude") { type = NavType.FloatType },
+        navArgument("storeName") { type = NavType.StringType },
+        navArgument("storeAddress") { type = NavType.StringType }
+      )
+    ) { backStackEntry ->
+      val arguments = requireNotNull(backStackEntry.arguments)
+      MapScreen(
+        navController = navController,
+        latitude = arguments.getFloat("latitude").toDouble(),
+        longitude = arguments.getFloat("longitude").toDouble(),
+        storeName = arguments.getString("storeName") ?: "Store Location",
+        storeAddress = arguments.getString("storeAddress") ?: ""
+      )
     }
   }
 }

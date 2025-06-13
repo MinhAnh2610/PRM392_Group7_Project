@@ -38,6 +38,7 @@ import coil3.compose.AsyncImage
 import com.tutorial.project.data.api.SupabaseClientProvider
 import com.tutorial.project.data.dto.NotificationHelper
 import com.tutorial.project.data.model.Product
+import com.tutorial.project.data.model.ProductWithStoreInfo
 import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
@@ -109,7 +110,11 @@ fun DashboardScreen(navController: NavController) {
     dashboardViewModel.loadProducts()
     dashboardViewModel.loadCartItems()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-      if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+      if (ContextCompat.checkSelfPermission(
+          context,
+          Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+      ) {
         dashboardViewModel.checkForNotification()
       } else {
         launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -185,7 +190,9 @@ fun DashboardScreen(navController: NavController) {
       )
     }
   ) { padding ->
-    Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+    Column(modifier = Modifier
+      .fillMaxSize()
+      .padding(padding)) {
       CategoryFilterSection(
         categories = categories,
         selectedCategory = selectedCategory,
@@ -196,7 +203,9 @@ fun DashboardScreen(navController: NavController) {
         Text(
           text = "Error: $it",
           color = Color.Red,
-          modifier = Modifier.padding(16.dp).fillMaxWidth()
+          modifier = Modifier
+            .padding(16.dp)
+            .fillMaxWidth()
         )
       }
 
@@ -208,7 +217,12 @@ fun DashboardScreen(navController: NavController) {
         if (filteredProducts.isEmpty()) {
           Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-              Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray)
+              Icon(
+                Icons.Default.ShoppingCart,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = Color.Gray
+              )
               Spacer(modifier = Modifier.height(16.dp))
               Text("No products found", fontSize = 18.sp, color = Color.Gray)
             }
@@ -216,14 +230,13 @@ fun DashboardScreen(navController: NavController) {
         } else {
           LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            // ...
           ) {
-            items(filteredProducts, key = { it.id!! }) { product ->
+            items(filteredProducts, key = { it.id }) { product ->
               ProductCard(
                 product = product,
                 onProductClick = {
-                  navController.navigate(Screen.ProductDetail.createRoute(product.id!!))
+                  navController.navigate(Screen.ProductDetail.createRoute(product.id))
                 },
                 onAddToCart = {
                   dashboardViewModel.addToCart(product, 1)
@@ -244,7 +257,9 @@ fun CategoryFilterSection(
   onCategorySelected: (String) -> Unit
 ) {
   LazyRow(
-    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(vertical = 8.dp),
     contentPadding = PaddingValues(horizontal = 16.dp),
     horizontalArrangement = Arrangement.spacedBy(8.dp)
   ) {
@@ -263,18 +278,27 @@ fun CategoryFilterSection(
 }
 
 @Composable
-fun ProductCard(product: Product, onProductClick: () -> Unit, onAddToCart: () -> Unit) {
+fun ProductCard(
+  product: ProductWithStoreInfo,
+  onProductClick: () -> Unit,
+  onAddToCart: () -> Unit
+) {
   Card(
     onClick = onProductClick,
     modifier = Modifier.fillMaxWidth(),
     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     shape = RoundedCornerShape(12.dp)
   ) {
-    Row(modifier = Modifier.padding(12.dp).fillMaxWidth()) {
+    Row(modifier = Modifier
+      .padding(12.dp)
+      .fillMaxWidth()) {
       AsyncImage(
         model = product.image_url,
         contentDescription = product.name,
-        modifier = Modifier.size(80.dp).clip(RoundedCornerShape(8.dp)).background(Color.Gray.copy(alpha = 0.1f)),
+        modifier = Modifier
+          .size(80.dp)
+          .clip(RoundedCornerShape(8.dp))
+          .background(Color.Gray.copy(alpha = 0.1f)),
         contentScale = ContentScale.Crop
       )
 
@@ -282,11 +306,17 @@ fun ProductCard(product: Product, onProductClick: () -> Unit, onAddToCart: () ->
 
       Column(modifier = Modifier.weight(1f)) {
         Text(
-          text = product.name ?: "Unknown Product",
+          text = product.name,
           fontWeight = FontWeight.Bold,
           fontSize = 16.sp,
           maxLines = 1,
           overflow = TextOverflow.Ellipsis
+        )
+        Text(
+          text = "Sold by ${product.store_name}",
+          fontSize = 12.sp,
+          color = Color.Gray,
+          maxLines = 1
         )
         product.description?.let {
           Text(
@@ -312,10 +342,14 @@ fun ProductCard(product: Product, onProductClick: () -> Unit, onAddToCart: () ->
           )
           Button(
             onClick = onAddToCart,
-            enabled = (product.stock_quantity ?: 0) > 0,
+            enabled = product.stock_quantity > 0,
             modifier = Modifier.height(36.dp)
           ) {
-            Icon(Icons.Default.Add, contentDescription = "Add to cart", modifier = Modifier.size(16.dp))
+            Icon(
+              Icons.Default.Add,
+              contentDescription = "Add to cart",
+              modifier = Modifier.size(16.dp)
+            )
             Spacer(modifier = Modifier.width(4.dp))
             Text("Add", fontSize = 12.sp)
           }

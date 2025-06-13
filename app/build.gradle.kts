@@ -71,6 +71,9 @@ dependencies {
 
   implementation("io.ktor:ktor-client-android:3.1.3")
 
+  implementation("com.mapbox.maps:android:11.12.3")
+  implementation("com.mapbox.extension:maps-compose:11.12.3")
+
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)
   androidTestImplementation(libs.androidx.espresso.core)

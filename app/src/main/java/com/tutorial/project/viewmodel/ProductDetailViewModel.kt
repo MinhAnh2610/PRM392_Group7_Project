@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutorial.project.data.dto.ToastEvent
 import com.tutorial.project.data.model.Product
+import com.tutorial.project.data.model.ProductWithStoreInfo
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
 import kotlinx.coroutines.launch
@@ -17,13 +18,13 @@ class ProductDetailViewModel(
   private val productId: Int
 ) : ViewModel() {
 
-  private val _product = MutableLiveData<Product?>()
-  val product: LiveData<Product?> = _product
+  private val _product = MutableLiveData<ProductWithStoreInfo?>()
+  val product: LiveData<ProductWithStoreInfo?> = _product
 
   private val _error = MutableLiveData<String?>()
   val error: LiveData<String?> = _error
 
-  private val _isLoading = MutableLiveData<Boolean>(false)
+  private val _isLoading = MutableLiveData(false)
   val isLoading: LiveData<Boolean> = _isLoading
 
   private val _toastEvent = MutableLiveData<ToastEvent?>()

@@ -6,8 +6,8 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutorial.project.data.dto.ToastEvent
-import com.tutorial.project.data.model.CartItem
-import com.tutorial.project.data.model.Product
+import com.tutorial.project.data.model.CartItemWithProductDetails
+import com.tutorial.project.data.model.ProductWithStoreInfo
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
 import kotlinx.coroutines.launch
@@ -17,11 +17,11 @@ class DashboardViewModel(
   private val cartRepository: CartRepository
 ) : ViewModel() {
   // --- LiveData for UI State ---
-  private val _products = MutableLiveData<List<Product>>()
-  val products: LiveData<List<Product>> = _products
+  private val _products = MutableLiveData<List<ProductWithStoreInfo>>()
+  val products: LiveData<List<ProductWithStoreInfo>> = _products
 
-  private val _cartItems = MutableLiveData<List<CartItem>>()
-  val cartItems: LiveData<List<CartItem>> = _cartItems
+  private val _cartItems = MutableLiveData<List<CartItemWithProductDetails>>()
+  val cartItems: LiveData<List<CartItemWithProductDetails>> = _cartItems
 
   private val _error = MutableLiveData<String?>()
   val error: LiveData<String?> = _error
@@ -62,7 +62,7 @@ class DashboardViewModel(
 
   fun loadCartItems() {
     viewModelScope.launch {
-      val result = cartRepository.fetchCartItems()
+      val result = cartRepository.getCartItemsWithDetails()
       Log.d("DashboardViewModel", "Cart Items Result: $result")
       result.onSuccess {
         _cartItems.value = it
@@ -73,15 +73,15 @@ class DashboardViewModel(
   }
 
   // --- UI Actions ---
-  fun addToCart(product: Product, quantity: Int) {
+  fun addToCart(product: ProductWithStoreInfo, quantity: Int) {
     // Use camelCase 'stockQuantity' from the merged Product model
-    if (quantity > (product.stock_quantity ?: 0)) {
+    if (quantity > product.stock_quantity) {
       _toastEvent.value = ToastEvent("Not enough stock available.")
       return
     }
 
     viewModelScope.launch {
-      cartRepository.addOrUpdateCartItem(product.id!!, quantity).fold(
+      cartRepository.addOrUpdateCartItem(product.id, quantity).fold(
         onSuccess = {
           _toastEvent.value = ToastEvent("Added to cart successfully!")
           // Refresh cart items to update the badge
