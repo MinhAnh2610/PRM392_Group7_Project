@@ -13,8 +13,12 @@ sealed class Screen(val route: String) {
   }
   data object Cart : Screen("cart")
   data object Billing : Screen("billing")
+  data object ConversationsList : Screen("conversations_list")
   data object Chat : Screen("chat/{storeOwnerId}/{storeName}") {
-    fun createRoute(storeOwnerId: String, storeName: String) = "chat/$storeOwnerId/$storeName"
+    fun createRoute(storeOwnerId: String, storeName: String): String {
+      val encodedStoreName = URLEncoder.encode(storeName, StandardCharsets.UTF_8.toString())
+      return "chat/$storeOwnerId/$encodedStoreName"
+    }
   }
   data object Map : Screen("map/{latitude}/{longitude}/{storeName}/{storeAddress}") {
     fun createRoute(lat: Double, lon: Double, name: String, address: String): String {

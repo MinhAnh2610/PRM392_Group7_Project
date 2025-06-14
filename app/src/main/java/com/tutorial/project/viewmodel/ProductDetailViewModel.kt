@@ -6,7 +6,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutorial.project.data.dto.ToastEvent
-import com.tutorial.project.data.model.Product
 import com.tutorial.project.data.model.ProductWithStoreInfo
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
@@ -29,6 +28,9 @@ class ProductDetailViewModel(
 
   private val _toastEvent = MutableLiveData<ToastEvent?>()
   val toastEvent: LiveData<ToastEvent?> = _toastEvent
+
+  private val _navigateToChat = MutableLiveData<Pair<String, String>?>(null)
+  val navigateToChat: LiveData<Pair<String, String>?> = _navigateToChat
 
   init {
     loadProductDetails()
@@ -75,10 +77,17 @@ class ProductDetailViewModel(
     }
   }
 
-  /**
-   * Call this function after the toast has been shown to prevent it from
-   * re-appearing on configuration changes (e.g., screen rotation).
-   */
+  fun onChatIconClick() {
+    val productInfo = _product.value ?: return // Exit if product isn't loaded
+
+    // Trigger navigation with owner ID and store name
+    _navigateToChat.value = productInfo.store_owner_id to productInfo.store_name
+  }
+
+  fun onChatNavigated() {
+    _navigateToChat.value = null
+  }
+
   fun onToastShown() {
     _toastEvent.value = null
   }

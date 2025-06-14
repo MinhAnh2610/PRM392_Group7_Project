@@ -2,7 +2,6 @@
 package com.tutorial.project.ui.product
 
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -89,11 +88,20 @@ fun ProductDetailScreen(
   val context = LocalContext.current
 
   val toastEvent by viewModel.toastEvent.observeAsState()
+  val navigateToChat by viewModel.navigateToChat.observeAsState(null)
 
   LaunchedEffect(toastEvent) {
     toastEvent?.let { event ->
       Toast.makeText(context, event.message, Toast.LENGTH_SHORT).show()
       viewModel.onToastShown()
+    }
+  }
+
+  LaunchedEffect(navigateToChat) {
+    val chatData = navigateToChat
+    if (chatData != null) {
+      navController.navigate(Screen.Chat.createRoute(chatData.first, chatData.second))
+      viewModel.onChatNavigated() // Reset the event so it doesn't fire again
     }
   }
 
@@ -133,7 +141,8 @@ fun ProductDetailScreen(
             navController = navController,
             onAddToCart = { quantity ->
               viewModel.addToCart(quantity)
-            }
+            },
+            onChatClick = { viewModel.onChatIconClick() }
           )
         }
 
@@ -152,7 +161,8 @@ fun ProductDetailScreen(
 fun ProductDetailsContent(
   product: ProductWithStoreInfo,
   navController: NavController,
-  onAddToCart: (Int) -> Unit
+  onAddToCart: (Int) -> Unit,
+  onChatClick: () -> Unit
 ) {
   var quantity by remember { mutableStateOf("1") }
 
@@ -164,16 +174,7 @@ fun ProductDetailsContent(
   ) {
     Card(
       modifier = Modifier
-        .fillMaxWidth()
-        .clickable {
-          // Navigate to chat screen on click
-          navController.navigate(
-            Screen.Chat.createRoute(
-              storeOwnerId = product.store_owner_id,
-              storeName = product.store_name
-            )
-          )
-        },
+        .fillMaxWidth(),
       elevation = CardDefaults.cardElevation(4.dp)
     ) {
       Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -198,12 +199,6 @@ fun ProductDetailsContent(
         }
         // Add separate IconButtons for Map and Chat
         IconButton(onClick = {
-          // Find store location to navigate
-          // In a real app with multiple locations per store, you would fetch this.
-          // For now, we assume a product has one location, which we can mock or fetch.
-          // As we don't have lat/lon in ProductWithStoreInfo, we'll use a placeholder.
-          // TODO: Add lat/lon to the 'products_with_store_info' view in Supabase.
-          // For now, using placeholder coordinates for San Francisco.
           navController.navigate(
             Screen.Map.createRoute(
               lat = 37.7749,
@@ -215,14 +210,7 @@ fun ProductDetailsContent(
         }) {
           Icon(Icons.Default.Place, contentDescription = "View on Map")
         }
-        IconButton(onClick = {
-          navController.navigate(
-            Screen.Chat.createRoute(
-              storeOwnerId = product.store_owner_id,
-              storeName = product.store_name
-            )
-          )
-        }) {
+        IconButton(onClick = onChatClick) {
           Icon(Icons.Default.Email, contentDescription = "Chat with Seller")
         }
       }

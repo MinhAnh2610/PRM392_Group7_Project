@@ -1,103 +1,123 @@
+// app/src/main/java/com/tutorial/project/viewmodel/ChatViewModel.kt
 package com.tutorial.project.viewmodel
 
-import androidx.compose.runtime.Recomposer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tutorial.project.data.dto.UiState
 import com.tutorial.project.data.model.Message
 import com.tutorial.project.data.repository.ChatRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.channel
-import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 class ChatViewModel(
   private val chatRepository: ChatRepository,
-  private val supabaseClient: SupabaseClient // For channel management
+  private val supabaseClient: SupabaseClient,
+  private val storeOwnerId: String // Added
 ) : ViewModel() {
-  /*
-    private val _messages = MutableStateFlow<UiState<List<Message>>>(Recomposer.State.Idle)
-    val messages: StateFlow<UiState<List<Message>>> = _messages
+  private val _messagesState = MutableStateFlow<UiState<List<Message>>>(UiState.Loading)
+  val messagesState: StateFlow<UiState<List<Message>>> = _messagesState.asStateFlow()
 
-    private val _sendMessageState = MutableStateFlow<UiState<Message?>>(Recomposer.State.Idle)
-    val sendMessageState: StateFlow<UiState<Message?>> = _sendMessageState
+  private var realtimeListenerJob: Job? = null
+  // 1. Create the channel immediately
+  private val chatChannel: RealtimeChannel = supabaseClient.channel("realtime:public:messages")
 
-    private var realtimeListenerJob: Job? = null
-    private var chatChannelInstance: RealtimeChannel? = null
+  init {
 
-      init {
-        loadMessageHistory()
-        startListeningForNewMessages()
-      }
+    // 2. Load the initial message history
+    loadMessageHistory()
 
+    // 3. Start listening for real-time updates
+    startListeningForNewMessages()
+  }
 
-
-      fun loadMessageHistory() {
-        viewModelScope.launch {
-          _messages.value = UiState.
-          chatRepository.getMessageHistory()
-            .onSuccess {
-              _messages.value = UiState.Success(it)
-            }
-            .onFailure {
-              _messages.value = UiState.Error(it.message ?: "Failed to load messages")
-            }
+  private fun loadMessageHistory() {
+    viewModelScope.launch {
+      _messagesState.value = UiState.Loading
+      // Pass storeOwnerId to the repository
+      chatRepository.getMessageHistory(storeOwnerId)
+        .onSuccess { messages ->
+          _messagesState.value = UiState.Success(messages)
         }
-      }
-
-      fun sendMessage(content: String) {
-        viewModelScope.launch {
-          _sendMessageState.value = UiState.Loading
-          chatRepository.sendMessage(content)
-            .onSuccess {
-              _sendMessageState.value = UiState.Success(it)
-              // New message will arrive via realtime listener, or you can manually add it here
-              // For simplicity, relying on realtime for updates to the list.
-              // If not using realtime for own messages, add 'it' to the _messages list.
-            }
-            .onFailure {
-              _sendMessageState.value = UiState.Error(it.message ?: "Failed to send message")
-            }
+        .onFailure { error ->
+          _messagesState.value = UiState.Error(error.message ?: "Failed to load messages")
         }
-      }
+    }
+  }
 
-      private fun startListeningForNewMessages() {
-        realtimeListenerJob?.cancel() // Cancel previous job if any
-        val userId = supabaseClient.auth.currentUserOrNull()?.id ?: return
+  fun sendMessage(content: String) {
+    if (content.isBlank()) return
 
-        // Construct channel name as used in repository or a general one if RLS handles filtering
-        chatChannelInstance =
-          supabaseClient.realtime.channel("chat_messages_for_user_${userId}_with_store")
+    // --- Optimistic Update ---
+    val currentState = _messagesState.value
+    if (currentState is UiState.Success) {
+      val optimisticMessage = Message(
+        id = null, // ID is null because it's not from the database yet
+        sender_id = supabaseClient.auth.currentUserOrNull()?.id ?: "",
+        receiver_id = storeOwnerId,
+        content = content,
+        created_at = null // Timestamp will be set by the database
+      )
+      // Immediately add the temporary message to the UI
+      _messagesState.value = UiState.Success(currentState.data + optimisticMessage)
+    }
+    // --- End Optimistic Update ---
 
 
-        realtimeListenerJob = viewModelScope.launch {
-          try {
-            // Subscribe before collecting
-            if (chatChannelInstance?.status?.value != RealtimeChannel.Status.SUBSCRIBED) {
-              chatChannelInstance?.subscribe()?.join() // Wait for subscription
+    viewModelScope.launch {
+      // Send the message to the database in the background
+      chatRepository.sendMessage(content, storeOwnerId)
+        .onFailure { error ->
+          // Optional: Handle send failure (e.g., remove the optimistic message and show an error)
+          println("Error sending message: ${error.message}")
+        }
+    }
+  }
+
+  private fun startListeningForNewMessages() {
+    realtimeListenerJob?.cancel()
+
+    realtimeListenerJob = viewModelScope.launch {
+      chatRepository.getNewMessagesFlow(chatChannel, storeOwnerId)
+        .catch { e -> _messagesState.value = UiState.Error("Realtime error: ${e.message}") }
+        .collect { newMessage ->
+          val currentUiState = _messagesState.value
+          if (currentUiState is UiState.Success) {
+            val currentMessages = currentUiState.data.toMutableList()
+            // Check if we have an optimistic version of this message (which has a null id)
+            val optimisticMessageIndex = currentMessages.indexOfFirst {
+              it.id == null && it.content == newMessage.content
             }
 
-            chatRepository.listenForNewMessages().collect { newMessage ->
-              val currentMessages = (_messages.value as? UiState.Success)?.data ?: emptyList()
-              _messages.value = UiState.Success(currentMessages + newMessage)
+            if (optimisticMessageIndex != -1) {
+              // If we find the optimistic message, replace it with the real one from the DB
+              currentMessages[optimisticMessageIndex] = newMessage
+            } else {
+              // Otherwise, this is a new message from the other user, so just add it
+              currentMessages.add(newMessage)
             }
-          } catch (e: Exception) {
-            _messages.value = UiState.Error("Realtime connection error: ${e.message}")
+            _messagesState.value = UiState.Success(currentMessages)
           }
         }
-      }
+    }
 
-
+    viewModelScope.launch {
+      chatChannel.subscribe()
+    }
+  }
 
   override fun onCleared() {
     super.onCleared()
     realtimeListenerJob?.cancel()
-    viewModelScope.launch { // Unsubscribe in a coroutine
-      chatChannelInstance?.unsubscribe()
+    viewModelScope.launch {
+      chatChannel.unsubscribe()
     }
   }
-   */
 }

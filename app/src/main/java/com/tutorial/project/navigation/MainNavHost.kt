@@ -11,6 +11,8 @@ import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.ui.auth.LoginScreen
 import com.tutorial.project.ui.auth.SignUpScreen
 import com.tutorial.project.ui.cart.CartScreen
+import com.tutorial.project.ui.chat.ChatScreen
+import com.tutorial.project.ui.chat.ConversationsListScreen
 import com.tutorial.project.ui.checkout.BillingScreen
 import com.tutorial.project.ui.dashboard.DashboardScreen
 import com.tutorial.project.ui.map.MapScreen
@@ -75,6 +77,10 @@ fun MainNavHost() {
       BillingScreen(navController = navController)
     }
 
+    composable(Screen.ConversationsList.route) {
+      ConversationsListScreen(navController = navController)
+    }
+
     composable(
       route = Screen.Chat.route,
       arguments = listOf(
@@ -82,19 +88,17 @@ fun MainNavHost() {
         navArgument("storeName") { type = NavType.StringType }
       )
     ) { backStackEntry ->
-      val storeOwnerId = backStackEntry.arguments?.getString("storeOwnerId")
-      val encodedStoreName = backStackEntry.arguments?.getString("storeName")
-      requireNotNull(storeOwnerId) { "Store Owner ID is required" }
-      requireNotNull(encodedStoreName) { "Store Name is required" }
-      val storeName = URLDecoder.decode(encodedStoreName, StandardCharsets.UTF_8.toString())
+      val arguments = requireNotNull(backStackEntry.arguments)
+      val storeOwnerId = requireNotNull(arguments.getString("storeOwnerId"))
+      val storeName = requireNotNull(arguments.getString("storeName"))
+      // Decode the store name in case it contains special characters
+      val decodedStoreName = URLDecoder.decode(storeName, StandardCharsets.UTF_8.toString())
 
-//      ChatScreen(
-//        navController = navController,
-//        storeOwnerId = storeOwnerId,
-//        storeName = storeName
-//      )
-
-
+      ChatScreen(
+        navController = navController,
+        storeOwnerId = storeOwnerId,
+        storeName = decodedStoreName
+      )
     }
 
     composable(

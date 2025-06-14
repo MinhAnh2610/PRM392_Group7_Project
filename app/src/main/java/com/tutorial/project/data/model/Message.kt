@@ -8,5 +8,5 @@ data class Message(
   val sender_id: String,
   val receiver_id: String, // Could be a fixed store ID or dynamic
   val content: String,
-  val sent_at: String? // Consider Instant
+  val created_at: String? = null // Consider Instant
 )
