@@ -26,18 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.tutorial.project.data.api.SupabaseClientProvider
 import com.tutorial.project.data.dto.AuthResult
 import com.tutorial.project.data.repository.AuthRepository
-import com.tutorial.project.data.repository.ProductRepository
 import com.tutorial.project.navigation.Screen
 import com.tutorial.project.viewmodel.AuthViewModel
-import com.tutorial.project.viewmodel.DashboardViewModel
 import com.tutorial.project.viewmodel.factory.GenericViewModelFactory
-import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.auth
 
 @Composable
