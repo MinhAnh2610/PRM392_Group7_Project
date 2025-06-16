@@ -77,10 +77,13 @@ fun ProductDetailScreen(
           client = SupabaseClientProvider.client,
           authRepository = AuthRepository(SupabaseClientProvider.client.auth)
         ),
+        authRepository = AuthRepository(SupabaseClientProvider.client.auth),
         productId = productId
       )
     }
   )
+
+  val isLoggedIn = remember { viewModel.isUserLoggedIn() }
 
   val product by viewModel.product.observeAsState()
   val isLoading by viewModel.isLoading.observeAsState(false)
@@ -139,10 +142,22 @@ fun ProductDetailScreen(
           ProductDetailsContent(
             product = product!!,
             navController = navController,
+            isLoggedIn = isLoggedIn,
             onAddToCart = { quantity ->
-              viewModel.addToCart(quantity)
+              if (isLoggedIn) {
+                viewModel.addToCart(quantity)
+              } else {
+                // User is a guest, navigate them to login screen
+                navController.navigate(Screen.Login.route)
+              }
             },
-            onChatClick = { viewModel.onChatIconClick() }
+            onChatClick = {
+              if (isLoggedIn) {
+                viewModel.onChatIconClick()
+              } else {
+                navController.navigate(Screen.Login.route)
+              }
+            }
           )
         }
 
@@ -161,6 +176,7 @@ fun ProductDetailScreen(
 fun ProductDetailsContent(
   product: ProductWithStoreInfo,
   navController: NavController,
+  isLoggedIn: Boolean,
   onAddToCart: (Int) -> Unit,
   onChatClick: () -> Unit
 ) {
@@ -281,7 +297,7 @@ fun ProductDetailsContent(
         enabled = product.stock_quantity > 0 && (quantity.toIntOrNull() ?: 0) > 0,
         modifier = Modifier.height(56.dp)
       ) {
-        Text("Add to Cart")
+        Text(if (isLoggedIn) "Add to Cart" else "Login to Add to Cart")
       }
     }
   }

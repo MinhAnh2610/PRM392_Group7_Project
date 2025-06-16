@@ -3,10 +3,13 @@ package com.tutorial.project.ui.auth
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,6 +33,7 @@ import com.tutorial.project.data.api.SupabaseClientProvider
 import com.tutorial.project.data.dto.AuthResult
 import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.data.repository.ProductRepository
+import com.tutorial.project.navigation.Screen
 import com.tutorial.project.viewmodel.AuthViewModel
 import com.tutorial.project.viewmodel.DashboardViewModel
 import com.tutorial.project.viewmodel.factory.GenericViewModelFactory
@@ -116,6 +120,20 @@ fun LoginScreen(
         .padding(top = 8.dp)
     ) {
       Text("Don't have an account? Sign up")
+    }
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    OutlinedButton(
+      onClick = {
+        // Navigate to Dashboard but clear Login from the back stack
+        navController.navigate(Screen.Dashboard.route) {
+          popUpTo(Screen.Login.route) { inclusive = true }
+        }
+      },
+      modifier = Modifier.fillMaxWidth()
+    ) {
+      Text("Continue as Guest")
     }
   }
 }

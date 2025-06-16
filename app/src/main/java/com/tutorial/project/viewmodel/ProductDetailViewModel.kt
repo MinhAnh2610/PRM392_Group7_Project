@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutorial.project.data.dto.ToastEvent
 import com.tutorial.project.data.model.ProductWithStoreInfo
+import com.tutorial.project.data.repository.AuthRepository
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.ProductRepository
 import kotlinx.coroutines.launch
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 class ProductDetailViewModel(
   private val productRepository: ProductRepository,
   private val cartRepository: CartRepository,
+  private val authRepository: AuthRepository,
   private val productId: Int
 ) : ViewModel() {
 
@@ -35,6 +37,8 @@ class ProductDetailViewModel(
   init {
     loadProductDetails()
   }
+
+  fun isUserLoggedIn(): Boolean = authRepository.isLoggedIn()
 
   private fun loadProductDetails() {
     viewModelScope.launch {

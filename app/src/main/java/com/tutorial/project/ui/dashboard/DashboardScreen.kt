@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
@@ -110,6 +111,8 @@ fun DashboardScreen(navController: NavController) {
       AuthViewModel(AuthRepository(SupabaseClientProvider.client.auth))
     }
   )
+
+  val isLoggedIn by remember { mutableStateOf(authViewModel.isLoggedIn()) }
 
   // --- State Observation ---
   val productList by dashboardViewModel.products.observeAsState(emptyList())
@@ -199,27 +202,33 @@ fun DashboardScreen(navController: NavController) {
   Scaffold(
     topBar = {
       TopAppBar(
-        title = { Text("Store Dashboard", fontWeight = FontWeight.Bold) },
+        title = { Text(if (isLoggedIn) "Product Sale" else "Product Sale (Guest)") },
         actions = {
-          IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
-            BadgedBox(
-              badge = {
-                if (cartItemList.isNotEmpty()) {
-                  Badge { Text(cartItemList.size.toString()) }
+          if (isLoggedIn) {
+            IconButton(onClick = { navController.navigate(Screen.Cart.route) }) {
+              BadgedBox(
+                badge = {
+                  if (cartItemList.isNotEmpty()) {
+                    Badge { Text(cartItemList.size.toString()) }
+                  }
                 }
+              ) {
+                Icon(Icons.Default.ShoppingCart, contentDescription = "Shopping Cart")
               }
-            ) {
-              Icon(Icons.Default.ShoppingCart, contentDescription = "Shopping Cart")
             }
-          }
-          IconButton(onClick = { navController.navigate(Screen.ConversationsList.route) }) {
-            Icon(Icons.Default.Email, contentDescription = "Messages")
-          }
-          IconButton(onClick = { navController.navigate(Screen.OrderHistory.route) }) {
-            Icon(Icons.Default.CheckCircle, contentDescription = "Order History")
-          }
-          IconButton(onClick = { showLogoutDialog = true }) {
-            Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+            IconButton(onClick = { navController.navigate(Screen.ConversationsList.route) }) {
+              Icon(Icons.Default.Email, contentDescription = "Messages")
+            }
+            IconButton(onClick = { navController.navigate(Screen.OrderHistory.route) }) {
+              Icon(Icons.Default.CheckCircle, contentDescription = "Order History")
+            }
+            IconButton(onClick = { showLogoutDialog = true }) {
+              Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+            }
+          } else {
+            IconButton(onClick = { navController.navigate(Screen.Login.route) }) {
+              Icon(Icons.Default.Home, contentDescription = "Login")
+            }
           }
         },
         colors = TopAppBarDefaults.topAppBarColors(
@@ -228,9 +237,11 @@ fun DashboardScreen(navController: NavController) {
       )
     }
   ) { padding ->
-    Column(modifier = Modifier
-      .fillMaxSize()
-      .padding(padding)) {
+    Column(
+      modifier = Modifier
+        .fillMaxSize()
+        .padding(padding)
+    ) {
       CategoryFilterSection(
         categories = categories,
         selectedCategory = selectedCategory,
@@ -277,7 +288,11 @@ fun DashboardScreen(navController: NavController) {
                   navController.navigate(Screen.ProductDetail.createRoute(product.id))
                 },
                 onAddToCart = {
-                  dashboardViewModel.addToCart(product, 1)
+                  if (isLoggedIn) {
+                    dashboardViewModel.addToCart(product, 1)
+                  } else {
+                    navController.navigate(Screen.Login.route)
+                  }
                 }
               )
             }
@@ -327,9 +342,11 @@ fun ProductCard(
     elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
     shape = RoundedCornerShape(12.dp)
   ) {
-    Row(modifier = Modifier
-      .padding(12.dp)
-      .fillMaxWidth()) {
+    Row(
+      modifier = Modifier
+        .padding(12.dp)
+        .fillMaxWidth()
+    ) {
       AsyncImage(
         model = product.image_url,
         contentDescription = product.name,
