@@ -37,17 +37,6 @@ class CartRepository(
     }
   }
 
-  suspend fun fetchCartItems(): Result<List<CartItem>> = try {
-    val result = client
-      .from("cart_items")
-      .select()
-      .decodeList<CartItem>()
-
-    Result.success(result)
-  } catch (e: Exception) {
-    Result.failure(e)
-  }
-
   suspend fun addOrUpdateCartItem(productId: Int, quantityToAdd: Int): Result<Unit> {
     val userId = authRepository.getCurrentUserId()
       ?: return Result.failure(Exception("User not logged in"))

@@ -16,6 +16,8 @@ import com.tutorial.project.ui.chat.ConversationsListScreen
 import com.tutorial.project.ui.checkout.BillingScreen
 import com.tutorial.project.ui.dashboard.DashboardScreen
 import com.tutorial.project.ui.map.MapScreen
+import com.tutorial.project.ui.order.OrderDetailScreen
+import com.tutorial.project.ui.order.OrderHistoryScreen
 import com.tutorial.project.ui.product.ProductDetailScreen
 import io.github.jan.supabase.auth.auth
 import java.net.URLDecoder
@@ -75,6 +77,19 @@ fun MainNavHost() {
 
     composable(Screen.Billing.route) {
       BillingScreen(navController = navController)
+    }
+
+    composable(Screen.OrderHistory.route) {
+      OrderHistoryScreen(navController = navController)
+    }
+
+    composable(
+      route = Screen.OrderDetail.route,
+      arguments = listOf(navArgument("orderId") { type = NavType.IntType })
+    ) { backStackEntry ->
+      val orderId = backStackEntry.arguments?.getInt("orderId")
+      requireNotNull(orderId)
+      OrderDetailScreen(navController = navController, orderId = orderId)
     }
 
     composable(Screen.ConversationsList.route) {

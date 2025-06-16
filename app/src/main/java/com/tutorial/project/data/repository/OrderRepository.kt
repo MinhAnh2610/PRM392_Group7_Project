@@ -2,7 +2,10 @@
 package com.tutorial.project.data.repository
 
 import com.tutorial.project.data.model.CartItemWithProductDetails
+import com.tutorial.project.data.model.Order
+import com.tutorial.project.data.model.OrderItemsWithProductDetails
 import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -12,6 +15,38 @@ class OrderRepository(
   private val client: SupabaseClient,
   private val authRepository: AuthRepository
 ) {
+
+  suspend fun fetchUserOrders(): Result<List<Order>> {
+    return try {
+      val userId = authRepository.getCurrentUserId()
+        ?: return Result.failure(Exception("User not logged in"))
+      val result = client
+        .from("orders")
+        .select {
+          filter { eq("user_id", userId) }
+          order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+        }
+        .decodeList<Order>()
+
+      Result.success(result)
+    } catch (e: Exception) {
+      Result.failure(e)
+    }
+  }
+
+  suspend fun getOrderDetails(orderId: Int): Result<List<OrderItemsWithProductDetails>> {
+    // RLS policy ensures the user can only fetch details for their own orders.
+    return try {
+      val items = client.from("order_items_with_product_details")
+        .select {
+          filter { eq("order_id", orderId) }
+        }
+        .decodeList<OrderItemsWithProductDetails>()
+      Result.success(items)
+    } catch(e: Exception) {
+      Result.failure(e)
+    }
+  }
 
   /**
    * Calls a Supabase RPC function to create an order, which handles stock checking,
@@ -35,7 +70,7 @@ class OrderRepository(
       }
 
       // Call the RPC function
-       client.postgrest.rpc(
+      client.postgrest.rpc(
         "create_order_and_deduct_stock",
         buildJsonObject {
           put("p_cart_items", cartItemsJson)

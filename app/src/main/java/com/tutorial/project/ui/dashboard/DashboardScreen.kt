@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.AlertDialog
@@ -91,11 +92,13 @@ fun DashboardScreen(navController: NavController) {
   // Use a single, comprehensive DashboardViewModel
   val dashboardViewModel: DashboardViewModel = viewModel(
     factory = GenericViewModelFactory {
+      val client = SupabaseClientProvider.client
+      val authRepository = AuthRepository(client.auth)
       DashboardViewModel(
-        productRepository = ProductRepository(SupabaseClientProvider.client),
+        productRepository = ProductRepository(client),
         cartRepository = CartRepository(
-          client = SupabaseClientProvider.client,
-          authRepository = AuthRepository(SupabaseClientProvider.client.auth)
+          client = client,
+          authRepository = authRepository
         )
       )
     }
@@ -211,6 +214,9 @@ fun DashboardScreen(navController: NavController) {
           }
           IconButton(onClick = { navController.navigate(Screen.ConversationsList.route) }) {
             Icon(Icons.Default.Email, contentDescription = "Messages")
+          }
+          IconButton(onClick = { navController.navigate(Screen.OrderHistory.route) }) {
+            Icon(Icons.Default.CheckCircle, contentDescription = "Order History")
           }
           IconButton(onClick = { showLogoutDialog = true }) {
             Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
