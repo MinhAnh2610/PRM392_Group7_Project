@@ -58,8 +58,8 @@ fun LoginScreen(
   LaunchedEffect(authResult) {
     when (authResult) {
       is AuthResult.Success -> {
-        val email = (authResult as AuthResult.Success).userEmail
-        Toast.makeText(context, "Login successful! $email", Toast.LENGTH_SHORT).show()
+        val userEmail = (authResult as AuthResult.Success).userEmail
+        Toast.makeText(context, "Login successful! $userEmail", Toast.LENGTH_SHORT).show()
       }
       is AuthResult.Error -> {
         val message = (authResult as AuthResult.Error).message
