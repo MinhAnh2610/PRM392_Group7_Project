@@ -7,10 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tutorial.project.data.dto.ToastEvent
 import com.tutorial.project.data.model.CartItemWithProductDetails
-import com.tutorial.project.data.model.Order
 import com.tutorial.project.data.model.ProductWithStoreInfo
 import com.tutorial.project.data.repository.CartRepository
-import com.tutorial.project.data.repository.OrderRepository
 import com.tutorial.project.data.repository.ProductRepository
 import kotlinx.coroutines.launch
 
