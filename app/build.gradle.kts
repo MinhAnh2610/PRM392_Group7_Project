@@ -68,11 +68,15 @@ dependencies {
   implementation("io.github.jan-tennert.supabase:auth-kt")
   implementation("io.github.jan-tennert.supabase:realtime-kt")
   implementation("io.github.jan-tennert.supabase:storage-kt")
+  implementation("io.github.jan-tennert.supabase:functions-kt")
 
   implementation("io.ktor:ktor-client-android:3.1.3")
 
   implementation("com.mapbox.maps:android:11.12.3")
   implementation("com.mapbox.extension:maps-compose:11.12.3")
+
+  implementation("com.stripe:stripe-android:21.15.1")
+  implementation("com.stripe:paymentsheet:21.15.1")
 
   testImplementation(libs.junit)
   androidTestImplementation(libs.androidx.junit)

@@ -13,11 +13,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
 import com.tutorial.project.navigation.MainNavHost
 import com.tutorial.project.ui.theme.ProjectTheme
+import com.stripe.android.PaymentConfiguration
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     createNotificationChannel()
+
+    // Initialize Stripe
+    PaymentConfiguration.init(
+      applicationContext,
+      "pk_test_51RbbUnD7p526E7XrIPR3qIifK3hU5u1d19oQaPuGGoIVEycHO9fsXu4bZW6ZEc8Fx6YIhXl2K06ug3bFcXVEwO0k00hKDqN9RM" // <-- REPLACE with your Publishable Key
+    )
+
     enableEdgeToEdge()
     setContent {
       ProjectTheme {

@@ -1,23 +1,33 @@
 // app/src/main/java/com/tutorial/project/viewmodel/BillingViewModel.kt
 package com.tutorial.project.viewmodel
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.stripe.android.paymentsheet.PaymentSheet
 import com.tutorial.project.data.model.CartItemWithProductDetails
 import com.tutorial.project.data.repository.CartRepository
 import com.tutorial.project.data.repository.OrderRepository
+import com.tutorial.project.data.repository.StripeRepository
 import kotlinx.coroutines.launch
+
+sealed class PaymentStatus {
+  data object Idle : PaymentStatus()
+  data object Processing : PaymentStatus()
+  data class ReadyToPay(val customerConfig: PaymentSheet.CustomerConfiguration, val clientSecret: String) : PaymentStatus()
+  data class Success(val message: String) : PaymentStatus()
+  data class Error(val message: String) : PaymentStatus()
+}
 
 class BillingViewModel(
   private val orderRepository: OrderRepository,
-  private val cartRepository: CartRepository
+  private val cartRepository: CartRepository,
+  private val stripeRepository: StripeRepository
 ) : ViewModel() {
 
-  private val _orderProcessState = MutableLiveData<OrderProcessState>(OrderProcessState.Idle)
-  val orderProcessState: LiveData<OrderProcessState> = _orderProcessState
+  private val _paymentStatus = MutableLiveData<PaymentStatus>(PaymentStatus.Idle)
+  val paymentStatus: LiveData<PaymentStatus> = _paymentStatus
 
   private val _cartItems = MutableLiveData<List<CartItemWithProductDetails>>(emptyList())
   val cartItems: LiveData<List<CartItemWithProductDetails>> = _cartItems
@@ -25,63 +35,72 @@ class BillingViewModel(
   private val _totalPrice = MutableLiveData(0.0)
   val totalPrice: LiveData<Double> = _totalPrice
 
+  private val _clientSecret = MutableLiveData<String?>(null)
+  val clientSecret: LiveData<String?> = _clientSecret
+
   init {
-    loadOrderSummary()
+    loadCartAndPreparePayment()
   }
 
-  private fun loadOrderSummary() {
+  private fun loadCartAndPreparePayment() {
     viewModelScope.launch {
-      _orderProcessState.value = OrderProcessState.Processing
+      _paymentStatus.value = PaymentStatus.Processing
       cartRepository.getCartItemsWithDetails().fold(
         onSuccess = { items ->
+          if (items.isEmpty()) {
+            _paymentStatus.value = PaymentStatus.Error("Your cart is empty.")
+            return@launch
+          }
           _cartItems.value = items
           _totalPrice.value = items.sumOf { it.product_price * it.quantity }
-          _orderProcessState.value = OrderProcessState.Idle // Ready to proceed
+          preparePaymentSheet(items)
         },
         onFailure = {
-          _orderProcessState.value = OrderProcessState.Error(it.message ?: "Failed to load cart.")
+          _paymentStatus.value = PaymentStatus.Error(it.message ?: "Failed to load cart.")
         }
       )
     }
   }
 
-  fun placeOrder() {
-    val itemsToOrder = _cartItems.value
-    val totalAmount = _totalPrice.value
-
-    if (itemsToOrder.isNullOrEmpty() || totalAmount == null || totalAmount <= 0) {
-      _orderProcessState.value = OrderProcessState.Error("Cannot place an empty order.")
-      return
-    }
-
+  private fun preparePaymentSheet(items: List<CartItemWithProductDetails>) {
     viewModelScope.launch {
-      _orderProcessState.value = OrderProcessState.Processing
-
-      // Call the new transactional function in the repository
-      orderRepository.createOrderAndProcessStock(itemsToOrder).fold(
-        onSuccess = { result ->
-          // The RPC function now handles cart clearing, so we just report success.
-          _orderProcessState.value = OrderProcessState.Success(result)
+      stripeRepository.getPaymentSheetDetails(items).fold(
+        onSuccess = { response ->
+          val customerConfig = PaymentSheet.CustomerConfiguration(
+            id = response.customer,
+            ephemeralKeySecret = response.ephemeralKey
+          )
+          _paymentStatus.value = PaymentStatus.ReadyToPay(customerConfig, response.paymentIntent)
         },
-        onFailure = { orderError ->
-          // This will now catch stock errors like "Not enough stock for product ID 5"
-          val errorMessage = orderError.message ?: "Order creation failed"
-          Log.e("SUPABASE.orders", errorMessage)
-          _orderProcessState.value = OrderProcessState.Error(errorMessage)
+        onFailure = { error ->
+          _paymentStatus.value = PaymentStatus.Error(error.message ?: "Could not initiate payment.")
         }
       )
     }
   }
 
-  // Call this to reset the state after navigating away from the screen
-  fun onOrderProcessed() {
-    _orderProcessState.value = OrderProcessState.Idle
-  }
-}
+  fun onPaymentSuccess() {
+    viewModelScope.launch {
+      val items = _cartItems.value
+      if (items.isNullOrEmpty()) {
+        _paymentStatus.value = PaymentStatus.Error("Cannot create order, cart is empty.")
+        return@launch
+      }
 
-sealed class OrderProcessState {
-  data object Processing : OrderProcessState()
-  data class Success(val message: String) : OrderProcessState()
-  data class Error(val message: String) : OrderProcessState()
-  data object Idle : OrderProcessState()
+      orderRepository.createOrderAndProcessStock(items).fold(
+        onSuccess = {
+          _paymentStatus.value = PaymentStatus.Success("Payment successful! Order created.")
+        },
+        onFailure = {
+          // The payment succeeded, but order creation failed. This is a critical state.
+          // In a real app, you would log this for manual intervention.
+          _paymentStatus.value = PaymentStatus.Error("Payment was successful, but failed to create your order. Please contact support.")
+        }
+      )
+    }
+  }
+
+  fun onPaymentError(message: String) {
+    _paymentStatus.value = PaymentStatus.Error(message)
+  }
 }
