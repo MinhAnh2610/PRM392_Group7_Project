@@ -22,6 +22,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -404,7 +406,7 @@ fun ModernQuantitySelector(
       contentColor = if (quantity > 1) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
     ) {
       Icon(
-        Icons.Default.Delete,
+        Icons.Default.KeyboardArrowDown,
         contentDescription = "Decrease Quantity",
         modifier = Modifier.size(16.dp)
       )
@@ -436,7 +438,7 @@ fun ModernQuantitySelector(
       contentColor = MaterialTheme.colorScheme.onPrimary
     ) {
       Icon(
-        Icons.Default.Add,
+        Icons.Default.KeyboardArrowUp,
         contentDescription = "Increase Quantity",
         modifier = Modifier.size(16.dp)
       )
