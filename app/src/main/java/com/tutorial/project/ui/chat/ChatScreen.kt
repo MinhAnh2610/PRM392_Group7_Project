@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +51,8 @@ import com.tutorial.project.viewmodel.ChatViewModel
 import com.tutorial.project.viewmodel.factory.GenericViewModelFactory
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.launch
+import java.time.OffsetDateTime
+import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -136,7 +139,8 @@ fun ChatScreen(
   }
 }
 
-@Composable
+
+/*@Composable
 fun MessageBubble(message: Message, isFromCurrentUser: Boolean) {
   val alignment = if (isFromCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
   val backgroundColor = if (isFromCurrentUser) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
@@ -157,6 +161,59 @@ fun MessageBubble(message: Message, isFromCurrentUser: Boolean) {
         .background(backgroundColor)
         .padding(12.dp)
     )
+  }
+}*/
+@Composable
+fun MessageBubble(message: Message, isFromCurrentUser: Boolean) {
+  val alignment = if (isFromCurrentUser) Alignment.CenterEnd else Alignment.CenterStart
+  val backgroundColor = if (isFromCurrentUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondaryContainer
+  val textColor = if (isFromCurrentUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondaryContainer
+
+  val senderLabel = if (isFromCurrentUser) "You" else "Store"
+
+  Box(
+    modifier = Modifier
+      .fillMaxWidth()
+      .padding(
+        start = if (isFromCurrentUser) 48.dp else 0.dp,
+        end = if (isFromCurrentUser) 0.dp else 48.dp
+      ),
+    contentAlignment = alignment
+  ) {
+    Column(
+      modifier = Modifier
+        .clip(RoundedCornerShape(12.dp))
+        .background(backgroundColor)
+        .padding(12.dp)
+    ) {
+      Text(
+        text = senderLabel,
+        style = MaterialTheme.typography.labelSmall,
+        color = textColor
+      )
+
+      Text(
+        text = message.content,
+        color = textColor,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)
+      )
+
+      Text(
+        text = formatTimestamp(message.created_at),
+        style = MaterialTheme.typography.labelSmall,
+        color = textColor.copy(alpha = 0.7f)
+      )
+    }
+  }
+}
+
+fun formatTimestamp(timestamp: String?): String {
+  return try {
+    val dateTime = OffsetDateTime.parse(timestamp)
+    dateTime.format(DateTimeFormatter.ofPattern("HH:mm"))
+  } catch (e: Exception) {
+    ""
   }
 }
 
