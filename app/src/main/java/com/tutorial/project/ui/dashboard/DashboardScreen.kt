@@ -434,6 +434,14 @@ fun ModernTopAppBar(
           )
         }
 
+        IconButton(onClick = onOrderHistoryClick) {
+          Icon(
+            Icons.Outlined.History,
+            contentDescription = "Order History",
+            tint = MaterialTheme.colorScheme.onSurface
+          )
+        }
+
         IconButton(onClick = onCartClick) {
           BadgedBox(
             badge = {
