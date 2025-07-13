@@ -48,6 +48,12 @@ dependencies {
   implementation(libs.androidx.ui.graphics)
   implementation(libs.androidx.ui.tooling.preview)
   implementation(libs.androidx.material3)
+  implementation("com.github.skydoves:cloudy:0.2.7")
+  // Compose BOM - ensures all Compose libraries use compatible versions
+  implementation(platform("androidx.compose:compose-bom:2024.02.00"))
+
+  // Material Icons Extended (no version needed with BOM)
+  implementation("androidx.compose.material:material-icons-extended")
 
   implementation(libs.retrofit)
   implementation(libs.converter.gson)
